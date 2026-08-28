@@ -24,22 +24,6 @@ Keep the roles separate for normal `Plan:`, `Prompt:`, `Review:`, `Fix:`, and `R
 
 `Design:` requests use the page-scoped same-task exception defined in `CODEX_DEV_WORKFLOW.md`.
 
----
-
-## Native Windows .NET Host Execution
-
-On native Windows only, request outside-sandbox execution on the first attempt (`require_escalated` when that is the shell mechanism) for these canonical commands:
-
-- `dotnet restore CurlingConnect.slnx`
-- `dotnet build CurlingConnect.slnx`
-- `dotnet test tests/CurlingConnect.Api.Tests/CurlingConnect.Api.Tests.csproj`
-- `dotnet test CurlingConnect.slnx --no-restore`
-- `dotnet ef migrations has-pending-model-changes --project CurlingConnect.Api/CurlingConnect.Api.csproj --startup-project CurlingConnect.Api/CurlingConnect.Api.csproj`
-
-NuGet user configuration and cache files, plus Docker's Windows named-pipe access, sit outside the elevated native sandbox. This exception applies only to the path-and-argument-order forms shown; use the normal sandbox and approval flow for every other `dotnet` command. After Codex restarts, the project rules authorize these host requests without prompting.
-
----
-
 ## Parallel Slice Safety
 
 V3 permits conservative dependency-aware parallel implementation while preserving the existing Planning Agent → Slice Implementation Agent ownership model.
