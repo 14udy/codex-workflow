@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Use two separate Codex tasks for software development:
+For normal software development outside the page-scoped design workflow, use two separate Codex tasks:
 
 1. A long-lived **Planning Agent** task with direct repository access.
 2. A separate **Implementation Agent** task for each bounded implementation slice.
@@ -10,6 +10,8 @@ Use two separate Codex tasks for software development:
 The planning task owns repository assessment, architecture review, planning, prompt creation, implementation review, and corrective diagnosis.
 
 The implementation task owns only the approved code change and its verification.
+
+Requests beginning with `Design:` use the same-task exception described below. The design task keeps visual exploration, user feedback, approval, and implementation together so the approved direction is not handed to a separate implementation task.
 
 This workflow removes the normal need to upload repository ZIP files or focused snapshots. Direct repository access must still be used selectively and efficiently.
 
@@ -44,6 +46,78 @@ User sends Prompt: for the next approved slice
 ```
 
 Keep the Planning Agent task as the durable source of architectural context and plan state. Use a fresh Implementation Agent task when isolation would reduce context contamination or scope drift.
+
+---
+
+## Page-Scoped Design Workflow Exception
+
+Use this workflow only when the user begins a request with `Design:` or explicitly asks to enter the page-design workflow.
+
+```text
+User sends Design: <page or component>
+    ->
+Design task inspects the current page and existing theme
+    ->
+Design task asks only the missing high-impact questions
+    ->
+Design task proposes a visual direction without editing files
+    ->
+User reviews, revises, and explicitly approves the direction
+    ->
+The same design task implements the approved direction
+    ->
+If needed, the task asks the user to open the page in the Codex in-app browser
+    ->
+The design task inspects the rendered page at representative breakpoints
+    ->
+The design task fixes glaring page-scoped issues and repeats the relevant checks
+    ->
+User reviews the implemented page
+    ->
+User may explicitly promote shared decisions into the project design system
+```
+
+The design workflow must:
+
+- Stay in one Codex task through design exploration, approval, and implementation.
+- Not create an implementation-agent prompt, delegate the approved direction, or hand implementation to another agent.
+- Work on one named page or component at a time.
+- Use the installed `frontend-design` skill when available.
+- Inspect the current page, directly relevant components, and existing shared theme before proposing changes.
+- Invite the user to answer any or all of the design-intake questions defined in `AGENTS.md`, including optional inspiration images, screenshots, links, brand materials, and disliked examples.
+- Infer low-risk details from the repository and state material assumptions instead of forcing a complete questionnaire.
+- Produce a compact design proposal before editing, including palette, typography, layout, information hierarchy, and one appropriate signature element.
+- Wait for explicit approval or an explicit request to implement.
+- Preserve existing functionality and keep implementation limited to the approved page plus directly necessary shared styling primitives.
+- Record functional changes suggested by the design as separate future development slices unless the user explicitly adds them to scope.
+
+### Rendered-page quality gate
+
+An approved `Design:` implementation is not ready for user review until the design task has had the opportunity to inspect the actual page in the Codex in-app browser.
+
+1. Run the relevant source-level checks first, but do not treat a successful check or build as visual verification.
+2. If the target URL is not already available in the in-app browser, ask the user to start the local site and open the named page there. Continue in the same task once it is ready.
+3. Inspect representative widths that exercise the real responsive breakpoints. The normal baseline is approximately 390px, 768px, 1024px, and 1440px, adjusted when the project's breakpoints or composition call for different widths.
+4. Audit the rendered hierarchy, text wrapping, spacing, alignment, overflow, clipping, overlap, breakpoint transitions, action visibility and contrast, images, icons, and directly relevant interactive states.
+5. Use computed styles and measured layout when needed to catch issues hidden by source inspection, including global CSS overriding utilities, elements that should be hidden, and collisions at exact breakpoint boundaries.
+6. Compare the result with the approved direction and self-critique whether it feels intentional and subject-specific rather than generic, templated, or over-explained.
+7. Correct glaring issues that stay within the approved page, visual direction, and preserved behaviour. Reinspect the affected viewports and states after every material correction.
+8. Request approval before changing the visual direction materially, altering behaviour, widening scope, or redesigning another page or component.
+9. Report the viewports and states inspected, the corrections made during the audit, and anything that remains unverified. If browser access is unavailable, say so and do not claim that the page was visually verified.
+
+This quality gate is the narrow browser-testing exception for an approved page-scoped `Design:` task. It does not authorize a general smoke test or exploration of unrelated routes, forms, workflows, or integrations unless the user separately asks for one.
+
+### Project design-system promotion
+
+An accepted page is a candidate reference, not an automatic global template.
+
+After the user accepts the implemented page, ask whether its shared visual direction should become the project design system. Promote it only after explicit approval.
+
+For this repository, use the established root `DESIGN_SYSTEM.md`. Record approved design tokens, typography, component treatments, motion and accessibility principles, interface voice, source-of-truth implementation paths, and the accepted reference page. Clearly separate reusable primitives from page-specific layout or signature ideas.
+
+Later pages should consume shared CSS variables, theme primitives, and components rather than copying page-local CSS. Adopt the approved visual language one page at a time; do not automatically redesign existing pages or mechanically repeat the reference page's composition.
+
+If design work requires material behaviour, data-flow, route, backend, or contract changes, stop and move those changes through the normal Planning Agent to Implementation Agent workflow unless the user explicitly expands the design scope.
 
 ---
 
@@ -390,7 +464,7 @@ The Planning Agent task may be long-lived, but it should keep its working contex
 - Mark completed, deferred, rejected, and superseded slices clearly.
 - Avoid carrying speculative findings forward as confirmed facts.
 
-Use separate Implementation Agent tasks when:
+Outside the page-scoped `Design:` workflow, use separate Implementation Agent tasks when:
 
 - A clean context reduces the chance of scope drift.
 - The previous implementation task contains unrelated history.

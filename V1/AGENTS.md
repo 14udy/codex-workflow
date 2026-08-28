@@ -4,14 +4,16 @@
 
 For software and repository work, follow `CODEX_DEV_WORKFLOW.md`.
 
-This repository uses two distinct Codex roles:
+For normal software delivery, this repository uses two distinct Codex roles:
 
 1. **Codex Planning Agent** — scoped repository discovery, assessment, architecture review, planning, implementation-prompt creation, implementation review, and corrective diagnosis.
 2. **Codex Implementation Agent** — implementation of one explicit, bounded slice and its relevant verification.
 
 The planning agent has direct access to the repository. ZIP files and focused snapshots are not required unless the repository or required external material is unavailable.
 
-The two roles must remain separate. The planning agent does not edit production code. The implementation agent does not independently create or broaden the plan.
+The two roles must remain separate for `Plan:`, `Prompt:`, `Review:`, `Fix:`, and `Refactor:` work. The planning agent does not edit production code. The implementation agent does not independently create or broaden the plan.
+
+Requests beginning with `Design:` use the page-scoped design workflow below. That workflow is a deliberate exception to the normal handoff: one Codex task owns design exploration, user approval, and implementation of the approved visual direction.
 
 ---
 
@@ -25,6 +27,7 @@ The two roles must remain separate. The planning agent does not edit production 
 - Keep backend and frontend work separate unless a contract, integration, or shared behaviour requires both.
 - Treat authentication, authorization, security, databases, migrations, production configuration, deployment, payments, and external integrations as high-risk work.
 - Challenge unnecessary, risky, destructive, or over-engineered approaches before implementation.
+- Do not run a general smoke test unless the user asks. The rendered-page audit required for an approved `Design:` task is a narrow exception: it covers only the named page or component and its directly relevant responsive and interactive states.
 
 ---
 
@@ -173,6 +176,94 @@ When the user says `Refactor:`:
 5. Preserve behaviour unless a behaviour change is explicitly approved.
 6. Avoid broad rewrites, premature abstractions, and simultaneous structural and behavioural changes.
 7. Do not edit code until an implementation prompt is issued to the implementation agent.
+
+---
+
+## Trigger: `Design:`
+
+When the user says `Design:`, start a page-scoped visual-design workflow.
+
+This workflow is an explicit exception to the normal Planning Agent to separate Implementation Agent handoff.
+
+- Keep design exploration, feedback, approval, and implementation in the same Codex task.
+- Do not delegate the approved design, create a separate implementation-agent prompt, or hand the work to another agent.
+- Work on one named page or component at a time.
+- Use the installed `frontend-design` skill when it is available. If it is unavailable, continue with the workflow below rather than blocking solely on the missing skill.
+- Inspect the existing page, its directly relevant components, and the current shared theme or styling primitives before proposing changes.
+- Preserve existing functionality unless the user separately approves a behaviour change.
+- Treat functional gaps discovered during design as proposed future development slices; do not silently add them to the design scope.
+
+### Design intake
+
+Before editing, ask only the high-impact questions that are not already answered by the request or repository:
+
+1. What page or component should be improved?
+2. Who is it for?
+3. What is the page's single most important job?
+4. What feels wrong currently?
+5. What must remain unchanged?
+6. Are there screenshots, images, websites, brand materials, or existing pages for inspiration?
+7. Are there visual styles or examples the user specifically dislikes?
+
+The user may answer any or all of these questions. Infer low-risk details from the live project, state any material assumptions, and ask a follow-up only when a missing choice would materially change the result.
+
+### Design proposal and approval
+
+Before modifying files:
+
+1. Summarize the audience, page purpose, constraints, and preserved behaviour.
+2. Propose a compact visual direction covering palette, typography, layout, information hierarchy, and one appropriate signature element.
+3. Include a simple wireframe when it materially clarifies the layout.
+4. Explain how the direction fits the subject and avoids generic or unrelated visual defaults.
+5. Identify which ideas are project-wide candidates and which are intentionally page-specific.
+6. Wait for explicit user approval or an explicit request to implement.
+
+Revise the proposal in the same task until the user approves it. Approval of a visual direction authorizes implementation only for the named page or component and its directly necessary shared styling primitives.
+
+### Design implementation
+
+After explicit approval or an explicit request to implement:
+
+- Implement the approved direction in this same Codex task.
+- Keep the diff limited to the named page or component and directly necessary shared theme or component files.
+- Reuse existing styling systems, tokens, and shared components before adding parallel patterns.
+- Preserve routes, data flow, interactions, loading states, error states, empty states, and accessibility unless the approved design explicitly changes them.
+- Do not redesign other pages, introduce unrelated cleanup, or convert page-specific ideas into global conventions without approval.
+
+### In-app browser visual audit and corrective pass
+
+After implementing an approved design and running the relevant source-level checks, inspect the actual rendered result before asking the user to accept it.
+
+- If the named page is not already available in the Codex in-app browser, ask the user to start the local site and open the target URL there. Continue the same design task after they confirm it is ready.
+- Use the in-app browser directly. Do not treat source inspection, a successful build, or a generated screenshot that was not inspected as proof that the design renders correctly.
+- Check representative viewport widths appropriate to the page and its real breakpoints. Normally include a phone around 390px, tablet around 768px, compact desktop around 1024px, and wide desktop around 1440px, omitting or adjusting widths only when the project makes them irrelevant.
+- Inspect hierarchy, typography, wrapping, alignment, spacing, responsive composition, overflow, clipping, overlap, image and icon sizing, and the visibility and contrast of important content and actions.
+- Exercise directly relevant states such as navigation disclosures, menu icons, hover, focus, and open or closed controls when they form part of the named page or component.
+- When the visual result is uncertain, inspect computed layout, visibility, colours, and stacking rather than guessing from class names. Pay particular attention to global CSS overriding utility classes and to collisions at exact breakpoint boundaries.
+- Self-critique the rendered page against the approved direction. Remove or correct obvious generic, templated, decorative, or explanatory elements that weaken the page's purpose or signature idea.
+- Fix glaring page-scoped issues that are direct corrections to the approved design without requiring another approval. After each material correction, repeat the relevant browser checks until no glaring issue remains.
+- Ask before making a materially different visual direction, changing behaviour, widening scope, or redesigning another component.
+- If browser access remains unavailable, state that rendered-page verification is incomplete and request the in-app browser preview; do not claim visual acceptance from build output alone.
+
+This audit is a page-scoped design acceptance check, not permission to traverse unrelated routes, forms, user journeys, or backend integrations as a general smoke test.
+
+Report changed files, intentional presentation changes, corrections made during the visual audit, preserved behaviour, viewport and interaction checks performed, skipped checks, and unresolved visual decisions. Then ask the user to review the self-audited result.
+
+### Promoting an approved page into the project design system
+
+Completing one page does not automatically make every decision global. After the user accepts the implemented page, ask whether its shared visual direction should become the project design system.
+
+Only after explicit approval to promote the design:
+
+- Create or update the applicable frontend design-system document; in this repository use the established root `DESIGN_SYSTEM.md`.
+- Record the approved colour tokens, typography, spacing, radii, borders, shadows, density, motion principles, imagery treatment, accessibility rules, and interface voice.
+- Identify the real source-of-truth CSS, theme, and shared-component paths rather than duplicating their values only in documentation.
+- Extract shared tokens or components only where reuse is demonstrated or approved.
+- Name the accepted page as a reference implementation.
+- Distinguish global primitives from page-specific layout and signature elements.
+- Do not automatically redesign existing pages.
+
+For later `Design:` requests, read the approved design-system document and reuse its shared tokens and components. Preserve each page's own information hierarchy rather than mechanically copying the reference page's layout.
 
 ---
 
